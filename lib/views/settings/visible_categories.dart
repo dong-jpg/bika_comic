@@ -108,7 +108,6 @@ class _VisibleCategoriesState extends State<VisibleCategories> {
   void _onReorder(int oldIndex, int newIndex) {
     final wasVisible = Set<String>.of(_pref.isEmpty ? categories : _pref);
     final list = _displayList();
-    if (newIndex > oldIndex) newIndex -= 1;
     final item = list.removeAt(oldIndex);
     list.insert(newIndex, item);
     setState(() {
@@ -128,7 +127,7 @@ class _VisibleCategoriesState extends State<VisibleCategories> {
       body: ReorderableListView.builder(
         padding: const EdgeInsets.symmetric(vertical: 8),
         itemCount: list.length,
-        onReorder: _onReorder,
+        onReorderItem: _onReorder,
         itemBuilder: (context, index) {
           final title = list[index];
           final visible = pref.isEmpty || pref.contains(title);
