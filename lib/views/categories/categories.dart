@@ -1,15 +1,28 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart' show ScrollCacheExtent;
-import 'package:haka_comic/config/app_config.dart';
 import 'package:haka_comic/network/http.dart';
 import 'package:haka_comic/network/models.dart';
 import 'package:haka_comic/utils/extension.dart';
 import 'package:haka_comic/utils/log.dart';
 import 'package:haka_comic/utils/request/request.dart';
 import 'package:haka_comic/utils/ui.dart';
+import 'package:haka_comic/views/settings/visible_categories.dart';
 import 'package:go_router/go_router.dart';
 import 'package:haka_comic/widgets/error_page.dart';
 import 'package:haka_comic/widgets/ui_image.dart';
+
+/// 二级页入口：AppBar 壳 + 分类网格
+class CategoriesPage extends StatelessWidget {
+  const CategoriesPage({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('全部分类')),
+      body: const Categories(),
+    );
+  }
+}
 
 class Categories extends StatefulWidget {
   const Categories({super.key});
@@ -58,16 +71,11 @@ class _CategoriesState extends State<Categories> with RequestMixin {
   }
 
   Widget _buildCategoryList(List<Category> categories) {
-    final visibleExtraMenus = List.of(extraMenus);
-    final visibleCategories = List<Category>.of(categories);
-    if (AppConf().visibleCategories.isNotEmpty) {
-      visibleExtraMenus.removeWhere(
-        (item) => !AppConf().visibleCategories.contains(item['title']),
-      );
-      visibleCategories.removeWhere(
-        (item) => !AppConf().visibleCategories.contains(item.title),
-      );
-    }
+    final menuTitles = [for (final menu in extraMenus) menu['title']!];
+    final categoryTitles = [for (final item in categories) item.title];
+    final orderedTitles = applyVisibleOrder([...menuTitles, ...categoryTitles]);
+    final categoryByTitle = {for (final item in categories) item.title: item};
+
     return GridView.builder(
       scrollCacheExtent: ScrollCacheExtent.pixels(context.height * 1.5),
       gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
@@ -81,13 +89,12 @@ class _CategoriesState extends State<Categories> with RequestMixin {
         childAspectRatio: 1 / 1.35,
       ),
       padding: const .symmetric(horizontal: 8.0),
-      itemCount: visibleExtraMenus.length + visibleCategories.length,
+      itemCount: orderedTitles.length,
       itemBuilder: (context, index) {
-        if (index < visibleExtraMenus.length) {
-          return _buildMenuItem(visibleExtraMenus[index]);
-        }
-        final item = visibleCategories[index - visibleExtraMenus.length];
-        return _buildItem(item);
+        final title = orderedTitles[index];
+        final menuIndex = menuTitles.indexOf(title);
+        if (menuIndex != -1) return _buildMenuItem(extraMenus[menuIndex]);
+        return _buildItem(categoryByTitle[title]!);
       },
     );
   }

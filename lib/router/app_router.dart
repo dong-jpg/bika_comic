@@ -6,6 +6,7 @@ import 'package:haka_comic/network/models.dart'
 import 'package:haka_comic/router/build_side_sheet_route.dart';
 import 'package:haka_comic/router/route_observer.dart';
 import 'package:haka_comic/views/about/about.dart';
+import 'package:haka_comic/views/categories/categories.dart';
 import 'package:haka_comic/views/comic_details/comic_details.dart';
 import 'package:haka_comic/views/comic_details/downloader.dart';
 import 'package:haka_comic/views/comics/comics.dart';
@@ -133,6 +134,7 @@ final GoRouter appRouter = GoRouter(
         );
       },
     ),
+    GoRoute(path: '/categories', builder: (_, _) => const CategoriesPage()),
     GoRoute(path: '/rank', builder: (_, _) => const Rank()),
     GoRoute(path: '/random', builder: (_, _) => const Random()),
     GoRoute(path: '/favorites', builder: (_, _) => const Favorites()),
