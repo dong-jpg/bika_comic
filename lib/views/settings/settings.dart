@@ -49,9 +49,9 @@ class Settings extends StatelessWidget {
                 ),
                 MenuListTile.withAction(
                   icon: Icons.topic_outlined,
-                  title: '显示的分类',
+                  title: '分类管理',
                   onTap: () => context.push('/visible_categories'),
-                  subtitle: const Text('可设置分类页显示哪些分类'),
+                  subtitle: const Text('调整首页Tab与分类页的顺序、显示'),
                 ),
                 MenuListTile.withAction(
                   icon: Icons.label_off_outlined,
