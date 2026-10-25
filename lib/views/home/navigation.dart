@@ -23,9 +23,9 @@ class AppNavigationBar extends StatelessWidget {
       labelBehavior: NavigationDestinationLabelBehavior.onlyShowSelected,
       destinations: [
         const NavigationDestination(
-          icon: Icon(Icons.category_outlined),
-          label: '分类',
-          selectedIcon: Icon(Icons.category),
+          icon: Icon(Icons.home_outlined),
+          label: '首页',
+          selectedIcon: Icon(Icons.home),
         ),
         const NavigationDestination(
           icon: Icon(Icons.person_outline),
@@ -73,9 +73,9 @@ class AppNavigationBar extends StatelessWidget {
                 _SideMenuItem(
                   selected: selectedIndex == 0,
                   icon: selectedIndex == 0
-                      ? Icons.category
-                      : Icons.category_outlined,
-                  label: '分类',
+                      ? Icons.home
+                      : Icons.home_outlined,
+                  label: '首页',
                   onTap: () => onDestinationSelected(0),
                 ),
                 _SideMenuItem(
@@ -191,21 +191,17 @@ class _SideMenuItem extends StatelessWidget {
 }
 
 class AppHeaderBar extends StatelessWidget implements PreferredSizeWidget {
-  const AppHeaderBar({super.key, required this.selectedIndex});
-
-  final int selectedIndex;
+  const AppHeaderBar({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final title = ['分类', '我的'][selectedIndex];
-    final isCategory = title == '分类';
     final systemUiOverlayStyle = Theme.brightnessOf(context) == Brightness.light
         ? SystemUiOverlayStyle.dark
         : SystemUiOverlayStyle.light;
     return AppBar(
-      title: Text(title),
-      backgroundColor: isCategory ? null : Colors.transparent,
-      systemOverlayStyle: isCategory ? null : systemUiOverlayStyle,
+      title: const Text('我的'),
+      backgroundColor: Colors.transparent,
+      systemOverlayStyle: systemUiOverlayStyle,
       actions: [
         IconButton(
           onPressed: () => context.push('/search'),

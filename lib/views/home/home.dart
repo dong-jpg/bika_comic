@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:haka_comic/utils/ui.dart';
-import 'package:haka_comic/views/categories/categories.dart';
+import 'package:haka_comic/views/home/home_feed.dart';
 import 'package:haka_comic/views/home/navigation.dart';
 import 'package:haka_comic/views/mine/mine.dart';
 
@@ -27,16 +27,17 @@ class _HomeState extends State<Home> {
   Widget build(BuildContext context) {
     return Scaffold(
       extendBodyBehindAppBar: _selectedIndex == 1,
-      appBar: UiMode.m1(context)
-          ? AppHeaderBar(selectedIndex: _selectedIndex)
-          : null,
+      appBar:
+          UiMode.m1(context) && _selectedIndex == 1
+              ? const AppHeaderBar()
+              : null,
       body: Row(
         children: [
           if (!UiMode.m1(context)) _buildAppNavigationBar(),
           Expanded(
             child: IndexedStack(
               index: _selectedIndex,
-              children: const [Categories(), Mine()],
+              children: const [HomeFeed(), Mine()],
             ),
           ),
         ],
