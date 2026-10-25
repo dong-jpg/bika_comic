@@ -102,11 +102,19 @@ jobs:
 
       - name: Prepare signing files
         run: |
-          echo "storePassword=${{ secrets.STORE_PASSWORD }}" > android/key.properties
-          echo "keyPassword=${{ secrets.KEY_PASSWORD }}" >> android/key.properties
-          echo "keyAlias=${{ secrets.KEY_ALIAS }}" >> android/key.properties
-          echo "storeFile=upload-keystore.jks" >> android/key.properties
-          echo "${{ secrets.ANDROID_KEYSTORE }}" | base64 -d > android/app/upload-keystore.jks
+          if [ -n "${{ secrets.STORE_PASSWORD }}" ] && [ -n "${{ secrets.ANDROID_KEYSTORE }}" ]; then
+            echo "storePassword=${{ secrets.STORE_PASSWORD }}" > android/key.properties
+            echo "keyPassword=${{ secrets.KEY_PASSWORD }}" >> android/key.properties
+            echo "keyAlias=${{ secrets.KEY_ALIAS }}" >> android/key.properties
+            echo "storeFile=upload-keystore.jks" >> android/key.properties
+            echo "${{ secrets.ANDROID_KEYSTORE }}" | base64 -d > android/app/upload-keystore.jks
+          else
+            echo "::notice::未配置签名 secrets，使用仓库内置 CI 签名 (android/app/ci-keystore.jks)"
+            echo "storePassword=haka-comic-ci" > android/key.properties
+            echo "keyPassword=haka-comic-ci" >> android/key.properties
+            echo "keyAlias=ci" >> android/key.properties
+            echo "storeFile=ci-keystore.jks" >> android/key.properties
+          fi
 
       - name: Prepare Flutter project
         run: |
