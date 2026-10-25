@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:haka_comic/config/app_config.dart';
-import 'package:haka_comic/utils/extension.dart';
 
 /// 所有分类
 List<String> categories = [
@@ -50,6 +49,23 @@ List<String> categories = [
   "重口地帶",
 ];
 
+/// 已知条目集合（含首页菜单项）
+final Set<String> _knownCategories = categories.toSet();
+
+/// 应用用户设置的可见性与顺序：
+/// - 未设置（空）→ 原顺序全部展示
+/// - 已设置 → 按设置顺序展示已知条目；设置页未收录的新条目（API 新增）追加在末尾
+List<String> applyVisibleOrder(List<String> names) {
+  final pref = AppConf().visibleCategories;
+  if (pref.isEmpty) return names;
+  final ordered = [for (final title in pref) if (names.contains(title)) title];
+  final appended = [
+    for (final name in names)
+      if (!pref.contains(name) && !_knownCategories.contains(name)) name,
+  ];
+  return [...ordered, ...appended];
+}
+
 class VisibleCategories extends StatefulWidget {
   const VisibleCategories({super.key});
 
@@ -58,117 +74,77 @@ class VisibleCategories extends StatefulWidget {
 }
 
 class _VisibleCategoriesState extends State<VisibleCategories> {
-  List<String> selectedCategories = List.from(
-    AppConf().visibleCategories.isEmpty
-        ? categories
-        : AppConf().visibleCategories,
-  );
+  List<String> get _pref => AppConf().visibleCategories;
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('显示的分类')),
-      body: LayoutBuilder(
-        builder: (context, constraints) {
-          final crossAxisCount = (constraints.maxWidth / 180).floor().clamp(
-            2,
-            6,
-          );
-
-          return GridView.builder(
-            padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
-            itemCount: categories.length,
-            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: crossAxisCount,
-              mainAxisSpacing: 12,
-              crossAxisSpacing: 12,
-              mainAxisExtent: 72,
-            ),
-            itemBuilder: (context, index) {
-              final item = categories[index];
-              final selected = selectedCategories.contains(item);
-
-              return _CategoryTile(
-                title: item,
-                selected: selected,
-                onTap: () => _toggleCategory(item, !selected),
-              );
-            },
-          );
-        },
-      ),
-    );
+  /// 展示顺序：pref 内的按 pref 顺序在前，未选中的按默认顺序在后
+  List<String> _displayList() {
+    final pref = _pref;
+    if (pref.isEmpty) return List<String>.from(categories);
+    final ordered = [
+      for (final title in pref)
+        if (categories.contains(title)) title,
+    ];
+    final hidden = [
+      for (final c in categories)
+        if (!pref.contains(c)) c,
+    ];
+    return [...ordered, ...hidden];
   }
 
-  void _toggleCategory(String item, bool selected) {
+  void _toggle(String title, bool visible) {
+    final pref = List<String>.from(_pref);
+    if (pref.isEmpty && !visible) {
+      pref
+        ..addAll(categories)
+        ..remove(title);
+    } else if (visible && !pref.contains(title)) {
+      pref.add(title);
+    } else if (!visible) {
+      pref.remove(title);
+    }
+    setState(() => AppConf().visibleCategories = pref);
+  }
+
+  void _onReorder(int oldIndex, int newIndex) {
+    final wasVisible = Set<String>.of(_pref.isEmpty ? categories : _pref);
+    final list = _displayList();
+    if (newIndex > oldIndex) newIndex -= 1;
+    final item = list.removeAt(oldIndex);
+    list.insert(newIndex, item);
     setState(() {
-      if (selected) {
-        selectedCategories.add(item);
-      } else {
-        selectedCategories.remove(item);
-      }
-      AppConf().visibleCategories = List.from(selectedCategories);
+      AppConf().visibleCategories = [
+        for (final title in list)
+          if (wasVisible.contains(title)) title,
+      ];
     });
   }
-}
-
-class _CategoryTile extends StatelessWidget {
-  const _CategoryTile({
-    required this.title,
-    required this.selected,
-    required this.onTap,
-  });
-
-  final String title;
-  final bool selected;
-  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = context.colorScheme;
-    final textStyle = context.textTheme.titleSmall?.copyWith(
-      color: selected ? colorScheme.onPrimaryContainer : colorScheme.onSurface,
-      fontWeight: FontWeight.w600,
-    );
-
-    return Material(
-      color: selected
-          ? colorScheme.primaryContainer
-          : colorScheme.surfaceContainerHighest.withValues(alpha: 0.45),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(8),
-        side: BorderSide(
-          color: selected
-              ? colorScheme.primary
-              : colorScheme.outlineVariant.withValues(alpha: 0.7),
-        ),
-      ),
-      clipBehavior: Clip.antiAlias,
-      child: InkWell(
-        onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-          child: Row(
-            children: [
-              Expanded(
-                child: Text(
-                  title,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: textStyle,
-                ),
-              ),
-              const SizedBox(width: 10),
-              Icon(
-                selected
-                    ? Icons.check_circle_rounded
-                    : Icons.radio_button_unchecked_rounded,
-                color: selected ? colorScheme.primary : colorScheme.outline,
-                size: 22,
-              ),
-            ],
-          ),
-        ),
+    final pref = _pref;
+    final list = _displayList();
+    return Scaffold(
+      appBar: AppBar(title: const Text('分类管理')),
+      body: ReorderableListView.builder(
+        padding: const EdgeInsets.symmetric(vertical: 8),
+        itemCount: list.length,
+        onReorder: _onReorder,
+        itemBuilder: (context, index) {
+          final title = list[index];
+          final visible = pref.isEmpty || pref.contains(title);
+          return ListTile(
+            key: ValueKey(title),
+            leading: ReorderableDragStartListener(
+              index: index,
+              child: const Icon(Icons.drag_handle),
+            ),
+            title: Text(title),
+            trailing: Switch(
+              value: visible,
+              onChanged: (v) => _toggle(title, v),
+            ),
+          );
+        },
       ),
     );
   }
